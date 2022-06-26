@@ -4,6 +4,7 @@ from fastapi import APIRouter, Depends, HTTPException, Response, status
 from sqlalchemy.orm import Session
 
 from .. import models, schemas
+from .. import oauth2
 from ..database import get_db
 
 router = APIRouter(prefix="/posts", tags=["Posts"])
@@ -17,7 +18,11 @@ def get_posts(db: Session = Depends(get_db)):
 
 
 @router.post("/", response_model=schemas.ResponsePost)
-def create_post(post: schemas.CreatePost, db: Session = Depends(get_db)):
+def create_post(
+    post: schemas.CreatePost,
+    db: Session = Depends(get_db),
+    get_user: schemas.TokenData = Depends(oauth2.get_user),
+):
     new_post = models.Post(**post.dict())
 
     db.add(new_post)
@@ -41,7 +46,12 @@ def get_post(id: int, db: Session = Depends(get_db)):
 
 
 @router.put("/{id}", response_model=schemas.ResponsePost)
-def update_post(id: int, post: schemas.CreatePost, db: Session = Depends(get_db)):
+def update_post(
+    id: int,
+    post: schemas.CreatePost,
+    db: Session = Depends(get_db),
+    get_user: schemas.TokenData = Depends(oauth2.get_user),
+):
     query = db.query(models.Post).filter(models.Post.id == id)
 
     if not query.first():
@@ -57,7 +67,11 @@ def update_post(id: int, post: schemas.CreatePost, db: Session = Depends(get_db)
 
 
 @router.delete("/{id}", status_code=status.HTTP_204_NO_CONTENT)
-def delete_post(id: int, db: Session = Depends(get_db)):
+def delete_post(
+    id: int,
+    db: Session = Depends(get_db),
+    get_user: schemas.TokenData = Depends(oauth2.get_user),
+):
     query = db.query(models.Post).filter(models.Post.id == id)
 
     if not query.first():
