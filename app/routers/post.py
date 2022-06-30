@@ -58,17 +58,24 @@ def update_post(
     get_user: schemas.TokenData = Depends(oauth2.get_user),
 ):
     query = db.query(models.Post).filter(models.Post.id == id)
+    post = query.first()
 
-    if not query.first():
+    if not post:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Post with id: {id} not found",
         )
 
-    query.update(post.dict(), synchronize_session=False)
+    if post.user_id != get_user.id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Not allowed to perform the requested action",
+        )
+
+    query.update(**post.dict(), synchronize_session=False)
     db.commit()
 
-    return query.first()
+    return post
 
 
 @router.delete("/{id}", status_code=status.HTTP_204_NO_CONTENT)
@@ -78,11 +85,18 @@ def delete_post(
     get_user: schemas.TokenData = Depends(oauth2.get_user),
 ):
     query = db.query(models.Post).filter(models.Post.id == id)
+    post = query.first()
 
-    if not query.first():
+    if not post:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Post with id: {id} not found",
+        )
+
+    if post.user_id != get_user.id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Not allowed to perform the requested action",
         )
 
     query.delete(synchronize_session=False)
