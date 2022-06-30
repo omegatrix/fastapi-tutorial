@@ -8,6 +8,11 @@ from .. import oauth2
 from ..database import get_db
 
 router = APIRouter(prefix="/posts", tags=["Posts"])
+credentials_exception = HTTPException(
+    status_code=status.HTTP_403_FORBIDDEN,
+    detail="Could not validate credentials",
+    headers={"WWW-Authenticate": "Bearer"},
+)
 
 
 @router.get("/", response_model=List[schemas.ResponsePost])
@@ -21,9 +26,9 @@ def get_posts(db: Session = Depends(get_db)):
 def create_post(
     post: schemas.CreatePost,
     db: Session = Depends(get_db),
-    get_user: schemas.TokenData = Depends(oauth2.get_user),
+    get_user=Depends(oauth2.get_user),
 ):
-    new_post = models.Post(**post.dict())
+    new_post = models.Post(**post.dict(), user_id=get_user.id)
 
     db.add(new_post)
     db.commit()

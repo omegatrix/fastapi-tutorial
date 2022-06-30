@@ -17,6 +17,7 @@ class CreatePost(BasePost):
 class ResponsePost(BasePost):
     id: int
     created_at: datetime
+    user_id: int
 
     class Config:
         orm_mode = True
