@@ -29,7 +29,7 @@ def generate_access_token(data: dict):
 def verify_access_token(token: str, credentials_exception: Exception) -> TokenData:
     try:
         payload = jwt.decode(
-            token, settings.jwt_secret, algorithm=settings.jwt_algorithm
+            token, settings.jwt_secret, algorithms=settings.jwt_algorithm
         )
         user_id: str = payload.get("user_id")
 

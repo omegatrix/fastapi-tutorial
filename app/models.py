@@ -29,3 +29,20 @@ class User(Base):
     created_at = Column(
         TIMESTAMP(timezone=True), server_default=text("now()"), nullable=False
     )
+
+
+class Vote(Base):
+    __tablename__ = "vote"
+
+    user_id = Column(
+        Integer,
+        ForeignKey("user.id", ondelete="CASCADE"),
+        primary_key=True,
+        nullable=False,
+    )
+    post_id = Column(
+        Integer,
+        ForeignKey("post.id", ondelete="CASCADE"),
+        primary_key=True,
+        nullable=False,
+    )
