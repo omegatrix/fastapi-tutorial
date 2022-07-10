@@ -2,6 +2,7 @@ from typing import List, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Response, status
 from sqlalchemy.orm import Session
+from sqlalchemy import func
 
 from .. import models, oauth2, schemas
 from ..database import get_db
@@ -14,7 +15,7 @@ credentials_exception = HTTPException(
 )
 
 
-@router.get("/", response_model=List[schemas.ResponsePost])
+@router.get("/", response_model=List[schemas.ResponsePostAndVotes])
 def get_posts(
     db: Session = Depends(get_db),
     limit: int = 10,
@@ -22,7 +23,11 @@ def get_posts(
     search: Optional[str] = "",
 ):
     posts = (
-        db.query(models.Post)
+        (
+            db.query(models.Post, func.count(models.Vote.post_id).label("votes"))
+            .join(models.Vote, models.Vote.post_id == models.Post.id, isouter=True)
+            .group_by(models.Post.id)
+        )
         .filter(models.Post.title.contains(search))
         .limit(limit)
         .offset(offset)
@@ -30,6 +35,27 @@ def get_posts(
     )
 
     return posts
+
+
+@router.get("/{id}", response_model=schemas.ResponsePostAndVotes)
+def get_post(id: int, db: Session = Depends(get_db)):
+    post = (
+        (
+            db.query(models.Post, func.count(models.Vote.post_id).label("votes"))
+            .join(models.Vote, models.Vote.post_id == models.Post.id, isouter=True)
+            .group_by(models.Post.id)
+        )
+        .filter(models.Post.id == id)
+        .first()
+    )
+
+    if not post:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Post with id: {id} not found",
+        )
+
+    return post
 
 
 @router.post("/", response_model=schemas.ResponsePost)
@@ -45,19 +71,6 @@ def create_post(
     db.refresh(new_post)
 
     return new_post
-
-
-@router.get("/{id}", response_model=schemas.ResponsePost)
-def get_post(id: int, db: Session = Depends(get_db)):
-    post = db.query(models.Post).filter(models.Post.id == id).first()
-
-    if not post:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Post with id: {id} not found",
-        )
-
-    return post
 
 
 @router.put("/{id}", response_model=schemas.ResponsePost)

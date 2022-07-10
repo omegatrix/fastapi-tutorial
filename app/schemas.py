@@ -40,8 +40,15 @@ class CreatePost(BasePost):
 class ResponsePost(BasePost):
     id: int
     created_at: datetime
-    user_id: int
     user: ResponseUser
+
+    class Config:
+        orm_mode = True
+
+
+class ResponsePostAndVotes(BaseModel):
+    Post: ResponsePost
+    votes: int
 
     class Config:
         orm_mode = True
