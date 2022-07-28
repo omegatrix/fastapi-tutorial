@@ -26,5 +26,6 @@ def authenticate(
         }
     else:
         raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN, detail="Invalid Credentials"
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Invalid Credentials",
         )
